@@ -16,3 +16,9 @@ release/
 
 ## Jetbrains ##
 .idea/
+
+##  bundle ##
+bundle/
+dependencies/
+build/
+github_copy.egg-info/

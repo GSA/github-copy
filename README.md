@@ -8,8 +8,27 @@ The `github_copy.py` tool allows copying of files from one GitHub repository to 
 
 Currently supports Linux and Windows Subsystem for Linux (WSL).
 
-1. Install your [GitHub ssh key](https://help.github.com/en/github/authenticating-to-github/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent) under `~/.ssh/.id_rsa`
-2. Set your [GitHub token](https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line) with `export GITHUB_TOKEN=[YOUR_GITHUB_TOKEN]`
+1. Install Python 3
+2. Install your [GitHub ssh key](https://help.github.com/en/github/authenticating-to-github/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent) under `~/.ssh/id_rsa`
+3. Set your [GitHub token](https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line) with `export GITHUB_TOKEN=[YOUR_GITHUB_TOKEN]`
+4. Run `make install`
+5. Add `~/.local/bin` to your PATH environment variable: `export PATH=~/.local/bin:$PATH`
+
+## Installation without Internet
+
+#### On another machine with internet:
+Build a bundled version to `bundle/github-copy.tar.gz` using: `make bundle`
+
+#### On target machine:
+Extract the tar file and install.
+```
+tar zxvf github-copy.tar.gz
+cd github-copy/dependencies
+pip install * -f ./ --no-index
+cd ..
+make install
+export PATH=~/.local/bin:$PATH
+``` 
 
 ## Examples
 
