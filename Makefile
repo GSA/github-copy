@@ -7,4 +7,7 @@ precommit:
 ifneq ($(strip $(hooksPath)),.github/hooks)
 	@git config --add core.hooksPath .github/hooks
 endif
-echo "1.2.3.4"
+
+lint:
+	autopep8 --in-place --aggressive --max-line-length 120 -r .
+	black .

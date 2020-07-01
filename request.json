@@ -1,0 +1,7 @@
+{
+  "development_instance_type": "t2.micro",
+  "test_instance_type": "t2.micro",
+  "production_instance_type": "t2.micro",
+  "TICKET_NUMBER": "555",
+  "AMI_ID": "111"
+}
