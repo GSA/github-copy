@@ -2,7 +2,7 @@
 
 ## Repository contents
 
-The `github_copy.py` tool allows syncing of files from one GitHub repository to another. It also allows calling another script to perform transformations on the files before creating a pull request to send the changes to thier new location.
+The `github_copy.py` tool allows copying of files from one GitHub repository to another. It also allows calling another script to perform transformations on the files before creating a pull request to send the changes to their new location.
 
 ## Installation
 
@@ -25,7 +25,7 @@ Dry-run mode allows viewing what changes would occur without actually changing t
 python3 github_copy.py <b>--dry-run</b> --source-prefix=g- --destination-prefix=grace-customer --destination-branch="master" --source-branch="master" --transformer=prefix --transformer-args="--file-prefix=magefile"
 </pre>
 
-The github_copy tool is also capable from running actions from the "/actions" folder in [grace-actions](https://github.com/GSA/grace-actions) (super cool private repository for team members) by specifying the template_transformer.py script and using grace-actions as the source repository.
+The github_copy tool is also capable of running actions from the "/actions" folder in [grace-actions](https://github.com/GSA/grace-actions) (super cool private repository for team members) by specifying the "action" transformer and using grace-actions as the source repository.
 
 ```
 python3 github_copy.py --source-prefix=grace-actions --destination-prefix=g- --destination-branch="development" --source-branch="master" --transformer=action --transformer-args="--action=ec2 --request-file=request.json"
