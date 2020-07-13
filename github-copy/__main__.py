@@ -48,11 +48,7 @@ def switch_branch(dulwich_repo, branch_name):
         dulwich_repo.reset_index(dulwich_repo[branch].tree)
     else:
         raise Exception(
-            'branch "'
-            + branch_name
-            + '" does not exist for repo "'
-            + dulwich_repo.path
-            + '"'
+            f'branch "{branch_name}" does not exist for repo "{dulwich_repo.path}"'
         )
     dulwich_repo.refs.set_symbolic_ref(b"HEAD", branch)
 
@@ -80,100 +76,15 @@ def safe_push(github_repo, dulwich_repo, branch):
         fatal_error(e)
 
 
-parser = argparse.ArgumentParser(
-    description="Copy files from one GitHub repo to other(s). Allows for transforming the files using a script during the copy process."
-)
-parser.add_argument(
-    "--source-prefix",
-    "-sp",
-    dest="sourcePrefix",
-    type=str,
-    help="The name of the source repository to take changes from",
-)
-parser.add_argument(
-    "--source-directory",
-    "-sd",
-    dest="sourceDirectory",
-    type=str,
-    help="The source directory to take changes from",
-)
-parser.add_argument(
-    "--source-branch",
-    "-sb",
-    dest="sourceBranch",
-    type=str,
-    help="The branch to use in the source repository",
-    default="master",
-)
-parser.add_argument(
-    "--destination-prefix",
-    "-dp",
-    dest="destinationPrefix",
-    type=str,
-    help="The prefix to use to filter destination repositories where changes will be merged to",
-)
-parser.add_argument(
-    "--destination-branch",
-    "-db",
-    dest="destinationBranch",
-    type=str,
-    help="The branch to modify in the destination repositories",
-    default="development",
-)
-parser.add_argument(
-    "--temporary-branch",
-    "-tb",
-    dest="temporaryBranch",
-    type=str,
-    help="The branch to use for the pull request we will create",
-    default="temporary-automated-branch",
-)
-parser.add_argument(
-    "--file-prefix",
-    dest="filePrefix",
-    type=str,
-    help="The file prefix to filter by when copying files",
-    default="",
-)
-parser.add_argument(
-    "--transformer",
-    dest="script",
-    type=str,
-    help=(
-        "The transformation script to use to convert the files to a new format before copying"
-    ),
-    default="development",
-)
-parser.add_argument(
-    "--transformer-args",
-    dest="scriptParameters",
-    type=str,
-    help="The arguments to the transformation script",
-    default="development",
-)
-parser.add_argument(
-    "--source-org",
-    dest="sourceOrg",
-    type=str,
-    help="The GitHub org for the source repository",
-    default="GSA",
-)
-parser.add_argument(
-    "--destination-org",
-    dest="destinationOrg",
-    type=str,
-    help="The GitHub org for the destination repositories",
-    default="GSA",
-)
-parser.add_argument(
-    "--dry-run",
-    action="store_true",
-    dest="dryRun",
-    help="Indicates no changes should be made, but should only print what changes would be made",
-    default=False,
-)
+# import github_copy
+# from github_copy_parser import parse_github_copy_args
 
-args = parser.parse_args()
+# from github_copy import github_copy_parser
+# from github_copy import ArgParser
+# from .github_copy import arg_parser.parse_github_copy_args
+from .arg_parser import ArgParser
+
+args = ArgParser().parse_github_copy_args().parse_args()
 
 if args.sourceDirectory is not None and args.sourcePrefix is not None:
     fatal_error("cannot specify both a source-directory and a source-prefix")
@@ -184,6 +95,10 @@ g = Github(os.environ["GITHUB_TOKEN"])
 destinationRepositories = get_repos(
     args.destinationPrefix, operator.ge, 1, args.destinationOrg
 )
+
+if args.sourcePrefix == "grace-actions" and args.actionType == "":
+    fatal_error("action-type parameter is required when running grace-actions")
+
 
 temp_dir = tempfile.gettempdir() + SEPARATOR + REPOS + SEPARATOR
 shutil.rmtree(temp_dir, ignore_errors=True)
@@ -204,22 +119,24 @@ for github_repo in destinationRepositories:
     porcelain.branch_create(destination_path, args.temporaryBranch)
     switch_branch(dulwich_repo, args.temporaryBranch)
 
-    if not path.exists(args.script):
-        args.script = path.join("transformers", args.script + ".py")
+    # if not path.exists(args.script):
+    #     args.script = path.join("transformers", args.script + ".py")
 
+    if args.sourcePrefix == "grace-actions":
+        args.script = "python3 " + path.join(source_path, "actions", "run.py")
+
+        # TODO allow relative paths for the request.json file
+        args.scriptParameters = (
+            args.scriptParameters
+            + f" --action {args.actionType}"
+        )
+    else:
+        args.script = path.join("~/.local/bin", args.script + ".py")
+
+    command = f"{args.script} {args.scriptParameters} --src-dir={source_path} --dst-dir={destination_path}"
+    print(command)
     process = subprocess.Popen(
-        [
-            "python3 "
-            + os.getcwd()
-            + SEPARATOR
-            + args.script
-            + " "
-            + args.scriptParameters
-            + " --source-directory="
-            + source_path
-            + " --destination-directory="
-            + destination_path
-        ],
+        [command],
         shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -232,14 +149,16 @@ for github_repo in destinationRepositories:
     status = porcelain.status(dulwich_repo)
 
     for untracked in status.untracked:
-        porcelain.add(dulwich_repo, destination_path + SEPARATOR + untracked)
+        porcelain.add(dulwich_repo, path.join(destination_path, untracked))
 
     for unstaged in status.unstaged:
-        porcelain.add(dulwich_repo, destination_path + SEPARATOR + unstaged)
+        if type(unstaged) is bytes:
+            unstaged = str(unstaged)
+        porcelain.add(dulwich_repo, path.join(destination_path, unstaged))
 
     porcelain.commit(
         dulwich_repo,
-        "automated change",
+        args.pullRequestName,
         "grace-production <cloud.services.support+github_production@gsa.gov>",
     )
 
@@ -252,12 +171,12 @@ for github_repo in destinationRepositories:
         logging_color = "green"
         safe_push(github_repo, dulwich_repo, args.temporaryBranch)
         print(
-            termcolor.colored("Successfully pushed to " + github_repo.ssh_url, "green")
+            termcolor.colored(f"Successfully pushed to {github_repo.ssh_url}", "green")
         )
 
         github_repo.create_pull(
-            title="automated change",
-            body="automated change",
+            title=args.pullRequestName,
+            body=args.pullRequestName,
             head=args.temporaryBranch,
             base=args.destinationBranch,
         )
@@ -271,4 +190,4 @@ for github_repo in destinationRepositories:
         )
 
     if len(status.untracked + status.unstaged) == 0:
-        print(termcolor.colored("No changes " + logging_verb2 + " made", logging_color))
+        print(termcolor.colored(f"No changes {logging_verb2} made", logging_color))

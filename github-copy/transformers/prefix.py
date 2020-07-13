@@ -7,13 +7,13 @@ parser = argparse.ArgumentParser(
     description="Copy files with only the specified prefix."
 )
 parser.add_argument(
-    "--source-directory",
+    "--src-dir",
     dest="sourceDirectory",
     type=str,
     help="The name of the source repository to take changes from",
 )
 parser.add_argument(
-    "--destination-directory",
+    "--dst-dir",
     dest="destinationDirectory",
     type=str,
     help="The branch to use in the source repository",

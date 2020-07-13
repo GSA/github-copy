@@ -13,13 +13,15 @@ lint:
 	black .
 
 install:
-	pip3 install -r requirements.txt
+	pip3 install --user -r requirements.txt
 	pip3 install --user -v -e .
 
 uninstall:
 	# TODO why doesn't this cleanup scripts
-	pip3 uninstall github-copy
+	pip3 uninstall github-copy -y
 	rm -f ~/.local/bin/github_copy.py
+	rm -f ~/.local/bin/action.py
+	rm -f ~/.local/bin/prefix.py
 #	sudo python3 setup.py install --record uninstall-files.txt
 #	sudo xargs rm -rf < uninstall-files.txt
 #	cat uninstall-files.txt

@@ -1,7 +1,20 @@
 {
-  "development_instance_type": "t2.micro",
-  "test_instance_type": "t2.micro",
-  "production_instance_type": "t2.micro",
-  "TICKET_NUMBER": "555",
-  "AMI_ID": "111"
+    "number": "RITM0000001",
+    "action": "ec2",
+    "project_name": "customer1",
+    "hostname": "cagracepd-server1",
+    "ami_id": "ami-0b22c910bce7178b6",
+    "os_type": "linux",
+    "block_device": "/dev/sdb",
+    "network_tier": "middleware",
+    "ha_group": 1,
+    "development_instance_count": 1,
+    "development_instance_type": "t2.micro",
+    "development_volume_size": 5,
+    "test_instance_count": 1,
+    "test_instance_type": "m2.2xlarge",
+    "test_volume_size": 5,
+    "production_instance_count": 1,
+    "production_instance_type": "m2.2xlarge",
+    "production_volume_size": 10
 }

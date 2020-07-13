@@ -35,19 +35,19 @@ export PATH=~/.local/bin:$PATH
 Example of copying the magefile from "g-\*" to "grace-customer\*":
 
 ```
-python3 github_copy.py --source-prefix=g- --destination-prefix=grace-customer --destination-branch="master" --source-branch="master" --transformer=prefix --transformer-args="--file-prefix=magefile"
+python3 -m github-copy --source-prefix=g- --destination-prefix=grace-customer --destination-branch="master" --source-branch="master" --transformer=prefix --transformer-args="--file-prefix=magefile"
 ```
 
 Dry-run mode allows viewing what changes would occur without actually changing the remote repositories.
 
 <pre>
-python3 github_copy.py <b>--dry-run</b> --source-prefix=g- --destination-prefix=grace-customer --destination-branch="master" --source-branch="master" --transformer=prefix --transformer-args="--file-prefix=magefile"
+python3 -m github-copy <b>--dry-run</b> --source-prefix=g- --destination-prefix=grace-customer --destination-branch="master" --source-branch="master" --transformer=prefix --transformer-args="--file-prefix=magefile"
 </pre>
 
 The github_copy tool is also capable of running actions from the "/actions" folder in [grace-actions](https://github.com/GSA/grace-actions) (super cool private repository for team members) by specifying the "action" transformer and using grace-actions as the source repository.
 
 ```
-python3 github_copy.py --source-prefix=grace-actions --destination-prefix=g- --destination-branch="development" --source-branch="master" --transformer=action --transformer-args="--action=ec2 --request-file=request.json"
+python3 -m github-copy --dry-run --source-prefix=grace-actions --destination-prefix=g-grace --destination-branch="master" --source-branch="master" --transformer-args="--request-file request.json" --action-type=ec2
 ```
 
 

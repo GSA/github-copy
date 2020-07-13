@@ -22,3 +22,7 @@ bundle/
 dependencies/
 build/
 github_copy.egg-info/
+
+## python ##
+__init__.pyc
+__pycache__
