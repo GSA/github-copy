@@ -47,7 +47,7 @@ python3 -m github-copy <b>--dry-run</b> --source-prefix=g- --destination-prefix=
 The github_copy tool is also capable of running actions from the "/actions" folder in [grace-actions](https://github.com/GSA/grace-actions) (super cool private repository for team members) by specifying the "action" transformer and using grace-actions as the source repository.
 
 ```
-python3 -m github-copy --dry-run --source-prefix=grace-actions --destination-prefix=g-grace --destination-branch="master" --source-branch="master" --transformer-args="--request-file request.json" --action-type=ec2
+python3 -m github-copy --dry-run --source-prefix=grace-actions --destination-prefix=g-grace --destination-branch="development" --source-branch="master" --transformer-args="--request-file ~/request.json" --action-type=ec2
 ```
 
 
