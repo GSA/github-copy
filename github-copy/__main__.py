@@ -8,11 +8,18 @@ from os import path
 from pathlib import Path
 
 import termcolor
-from dulwich import porcelain
+from dulwich import porcelain, index
+from dulwich.client import (
+    HttpGitClient,
+    SSHGitClient,
+    LocalGitClient,
+    get_transport_and_path,
+)
+from dulwich.repo import Repo
 from github import Github
-import argparse
 import operator
 import shutil
+from .arg_parser import ArgParser
 
 SEPARATOR = os.sep
 REPOS = "repos"
@@ -43,7 +50,7 @@ def get_repos(prefix, operation, num_repos, org):
 
 def switch_branch(dulwich_repo, branch_name):
     """ Switch current branch to branch_name """
-    branch = bytes("refs" + SEPARATOR + "heads/" + branch_name, encoding="utf8")
+    branch = bytes("refs/heads/" + branch_name, encoding="utf8")
     if branch in dulwich_repo:
         dulwich_repo.reset_index(dulwich_repo[branch].tree)
     else:
@@ -55,6 +62,7 @@ def switch_branch(dulwich_repo, branch_name):
 
 def safe_push(github_repo, dulwich_repo, branch):
     """ Push if branch doesn't already exist in remote """
+    # TODO check if to branch already exists
     if any(b.name == branch for b in github_repo.get_branches()):
         fatal_error(
             'Branch "'
@@ -75,14 +83,6 @@ def safe_push(github_repo, dulwich_repo, branch):
     except Exception as e:
         fatal_error(e)
 
-
-# import github_copy
-# from github_copy_parser import parse_github_copy_args
-
-# from github_copy import github_copy_parser
-# from github_copy import ArgParser
-# from .github_copy import arg_parser.parse_github_copy_args
-from .arg_parser import ArgParser
 
 args = ArgParser().parse_github_copy_args().parse_args()
 
@@ -116,25 +116,39 @@ for github_repo in destinationRepositories:
     destination_path = temp_dir + github_repo.name
     dulwich_repo = porcelain.clone(github_repo.ssh_url, destination_path)
 
+    # FIXME Switch our working tree to our desired destination branch so we
+    # can modify that branch specifically. Consider switching to gitpython to
+    # avoid this convulted method of committing to a specific branch
+    host = github_repo.ssh_url.split(":")[0]
+    repo_relative_path = bytes(github_repo.ssh_url.split(":")[1], "utf-8")
+
+    sshClient = SSHGitClient(host)
+    remote_refs = sshClient.fetch(repo_relative_path, dulwich_repo)
+    print(remote_refs)
+    dulwich_repo[b"HEAD"] = remote_refs[
+        bytes("refs/heads/" + args.destinationBranch, "utf-8")
+    ]
+
+    index_file = dulwich_repo.index_path()
+    tree = dulwich_repo[b"HEAD"].tree
+    index.build_index_from_tree(
+        dulwich_repo.path, index_file, dulwich_repo.object_store, tree
+    )
+
     porcelain.branch_create(destination_path, args.temporaryBranch)
     switch_branch(dulwich_repo, args.temporaryBranch)
-
-    # if not path.exists(args.script):
-    #     args.script = path.join("transformers", args.script + ".py")
 
     if args.sourcePrefix == "grace-actions":
         args.script = "python3 " + path.join(source_path, "actions", "run.py")
 
         # TODO allow relative paths for the request.json file
-        args.scriptParameters = (
-            args.scriptParameters
-            + f" --action {args.actionType}"
-        )
+        args.scriptParameters = args.scriptParameters + f" --action {args.actionType}"
     else:
         args.script = path.join("~/.local/bin", args.script + ".py")
 
     command = f"{args.script} {args.scriptParameters} --src-dir={source_path} --dst-dir={destination_path}"
-    print(command)
+    # FIXME fix race condition with transformer for print statements
+    termcolor.colored(f"Running transformer with command '{command}'", "yellow")
     process = subprocess.Popen(
         [command],
         shell=True,
@@ -148,13 +162,8 @@ for github_repo in destinationRepositories:
 
     status = porcelain.status(dulwich_repo)
 
-    for untracked in status.untracked:
-        porcelain.add(dulwich_repo, path.join(destination_path, untracked))
-
-    for unstaged in status.unstaged:
-        if type(unstaged) is bytes:
-            unstaged = str(unstaged)
-        porcelain.add(dulwich_repo, path.join(destination_path, unstaged))
+    dulwich_repo.stage(status.untracked)
+    dulwich_repo.stage(status.unstaged)
 
     porcelain.commit(
         dulwich_repo,
@@ -169,6 +178,7 @@ for github_repo in destinationRepositories:
         logging_verb1 = "Copied"
         logging_verb2 = "were"
         logging_color = "green"
+
         safe_push(github_repo, dulwich_repo, args.temporaryBranch)
         print(
             termcolor.colored(f"Successfully pushed to {github_repo.ssh_url}", "green")
