@@ -116,26 +116,10 @@ for github_repo in destinationRepositories:
     destination_path = temp_dir + github_repo.name
     dulwich_repo = porcelain.clone(github_repo.ssh_url, destination_path)
 
-    # FIXME Switch our working tree to our desired destination branch so we
-    # can modify that branch specifically. Consider switching to gitpython to
-    # avoid this convulted method of committing to a specific branch
-    host = github_repo.ssh_url.split(":")[0]
-    repo_relative_path = bytes(github_repo.ssh_url.split(":")[1], "utf-8")
-
-    sshClient = SSHGitClient(host)
-    remote_refs = sshClient.fetch(repo_relative_path, dulwich_repo)
-    print(remote_refs)
-    dulwich_repo[b"HEAD"] = remote_refs[
-        bytes("refs/heads/" + args.destinationBranch, "utf-8")
-    ]
-
-    index_file = dulwich_repo.index_path()
-    tree = dulwich_repo[b"HEAD"].tree
-    index.build_index_from_tree(
-        dulwich_repo.path, index_file, dulwich_repo.object_store, tree
-    )
-    # switch to destination branch so the new branch we create is based off it
-    switch_branch(dulwich_repo, args.destinationBranch)
+    os.system("pushd " + destination_path) 
+    os.system("git fetch origin " + args.destinationBranch)
+    os.system("git checkout " + args.destinationBranch)
+    os.system("popd")
     
     porcelain.branch_create(destination_path, args.temporaryBranch)
     switch_branch(dulwich_repo, args.temporaryBranch)
