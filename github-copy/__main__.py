@@ -134,7 +134,9 @@ for github_repo in destinationRepositories:
     index.build_index_from_tree(
         dulwich_repo.path, index_file, dulwich_repo.object_store, tree
     )
-
+    # switch to destination branch so the new branch we create is based off it
+    switch_branch(dulwich_repo, args.destinationBranch)
+    
     porcelain.branch_create(destination_path, args.temporaryBranch)
     switch_branch(dulwich_repo, args.temporaryBranch)
 
