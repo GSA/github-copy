@@ -116,10 +116,8 @@ for github_repo in destinationRepositories:
     destination_path = temp_dir + github_repo.name
     dulwich_repo = porcelain.clone(github_repo.ssh_url, destination_path)
 
-    os.system("pushd " + destination_path) 
-    os.system("git fetch origin " + args.destinationBranch)
-    os.system("git checkout " + args.destinationBranch)
-    os.system("popd")
+    # switch to destination branch
+    os.system(f"cd {destination_path}; git fetch origin {args.destinationBranch}; git checkout {args.destinationBranch}")
     
     porcelain.branch_create(destination_path, args.temporaryBranch)
     switch_branch(dulwich_repo, args.temporaryBranch)
