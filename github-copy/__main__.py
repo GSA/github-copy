@@ -108,7 +108,7 @@ if args.sourceDirectory is None:
     sourceRepositories = get_repos(args.sourcePrefix, operator.eq, 1, args.sourceOrg)
     source_path = temp_dir + sourceRepositories[0].name
     dulwich_repo = porcelain.clone(sourceRepositories[0].ssh_url, source_path)
-    switch_branch(dulwich_repo, args.sourceBranch)
+    os.system(f"cd {source_path}; git fetch origin {args.sourceBranch}; git checkout {args.sourceBranch}")
 else:
     source_path = args.sourceDirectory
 
