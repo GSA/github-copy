@@ -118,7 +118,7 @@ for github_repo in destinationRepositories:
 
     # switch to destination branch
     os.system(f"cd {destination_path}; git fetch origin {args.destinationBranch}; git checkout {args.destinationBranch}")
-    
+
     porcelain.branch_create(destination_path, args.temporaryBranch)
     switch_branch(dulwich_repo, args.temporaryBranch)
 
@@ -168,11 +168,17 @@ for github_repo in destinationRepositories:
             termcolor.colored(f"Successfully pushed to {github_repo.ssh_url}", "green")
         )
 
-        github_repo.create_pull(
+        pr = github_repo.create_pull(
             title=args.pullRequestName,
             body=args.pullRequestName,
             head=args.temporaryBranch,
             base=args.destinationBranch,
+        )
+        print(
+            termcolor.colored(f"Pull request {pr.id} created", logging_color)
+        )
+        print(
+            termcolor.colored(f"Pull request URL: {pr.html_url}", logging_color)
         )
 
     for file in status.unstaged + status.untracked:
